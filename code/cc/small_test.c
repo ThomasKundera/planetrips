@@ -2,8 +2,12 @@
 #include <stdlib.h>
 #include <math.h>
 
+const double m=1.;
+const double km=1000.*m;
+const double miles=1609.34*m;
+
 double great_circle(double lng1, double lat1, double lng2, double lat2) {
-    const double R = 6371.0;           // Earth's mean radius in km
+    const double R = 6371.*km;           // Earth's mean radius in km
     const double TO_RAD = M_PI / 180.0; // degrees to radians conversion
 
     // Convert latitudes and longitudes to radians
@@ -22,6 +26,33 @@ double great_circle(double lng1, double lat1, double lng2, double lat2) {
     return R * c;
 }
 
+#include <math.h>
+
+double euclidean_polar_distance(double lat1, double lon1,
+                                double lat2, double lon2) {
+    const double MERIDIAN_LENGTH = 40000.*km;
+
+    double colat1_deg = 90.0 - fabs(lat1);
+    double colat2_deg = 90.0 - fabs(lat2);
+
+    double r1 = MERIDIAN_LENGTH * (colat1_deg / 180.0);
+    double r2 = MERIDIAN_LENGTH * (colat2_deg / 180.0);
+
+    double theta1 = lon1 * M_PI / 180.0;
+    double theta2 = lon2 * M_PI / 180.0;
+
+    double x1 = r1 * cos(theta1);
+    double y1 = r1 * sin(theta1);
+    double x2 = r2 * cos(theta2);
+    double y2 = r2 * sin(theta2);
+
+    // Euclidean distance
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+
+    return sqrt(dx * dx + dy * dy);
+}
+
 double fancy_distance(double lng1, double lat1, double lng2, double lat2) {
     int DistanceToTravel = 1000;    // miles
     int Skip = 1;                   // starting skip value
@@ -29,7 +60,7 @@ double fancy_distance(double lng1, double lat1, double lng2, double lat2) {
     for (int i = Skip; i < DistanceToTravel; i++) {
         // Increase the skip amount by 50 each iteration
         Skip += 50;
-        great_circle(lng1, lat1, lng2, lat2);
+        euclidean_polar_distance(lng1, lat1, lng2, lat2);
     }
     printf("Done: %d\n", Skip);
     return 0;
