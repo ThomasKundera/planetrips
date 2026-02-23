@@ -97,6 +97,7 @@ bool polar_euclidean_interpolate(
     double* lonC_out)
 {
     const double R_MAX = MERIDIAN_LENGTH / 2.0;
+    bool final = false;
 
     // Co-latitudes (angular distance from north pole in degrees)
     double colatA_deg = 90.0 - fabs(latA);
@@ -106,8 +107,8 @@ bool polar_euclidean_interpolate(
     double rA = R_MAX * (colatA_deg / 90.0);
     double rB = R_MAX * (colatB_deg / 90.0);
 
-    double thetaA = lonA * M_PI / 180.0;
-    double thetaB = lonB * M_PI / 180.0;
+    double thetaA = lonA * TO_RAD;
+    double thetaB = lonB * TO_RAD;
 
     // Cartesian coordinates
     double xA = rA * cos(thetaA);
@@ -126,15 +127,18 @@ bool polar_euclidean_interpolate(
     if (total_dist < 1 * m ) {
         *latC_out = latA;
         *lonC_out = lonA;
-        return (step <= 1 * m);
+        final = true;
+        return (final);
     }
 
     // Fraction along the line segment
     double t;
     if (step <= 0.0) {
         t = 0.0;
+        final = true;
     } else if (step >= total_dist) {
-        t = 1.0;
+        t = total_dist;
+        final = true;
     } else {
         t = step / total_dist;
     }
@@ -151,7 +155,7 @@ bool polar_euclidean_interpolate(
         // Very close to north pole → latitude = 90°, longitude arbitrary
         *latC_out = 90.0;
         *lonC_out = lonA;  // or 0.0 — doesn't matter
-        return true;
+        return false;
     }
 
     thetaC = atan2(yC, xC);
@@ -168,7 +172,7 @@ bool polar_euclidean_interpolate(
     *latC_out = latC;
     *lonC_out = lonC;
 
-    return true;
+    return final;
 }
 
 
@@ -178,7 +182,7 @@ double fancy_distance(double lng1, double lat1, double lng2, double lat2) {
 
     while (1) {
         double latC, lonC;
-        if (!polar_euclidean_interpolate(lat1, lng1, lat2, lng2, step, &latC, &lonC)) {
+        if (polar_euclidean_interpolate(lat1, lng1, lat2, lng2, step, &latC, &lonC)) {
             break;
         }
         sum_dist += step;
